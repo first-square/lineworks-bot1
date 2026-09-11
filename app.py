@@ -40,9 +40,6 @@ def get_access_token():
         }
     )
 
-    print("token status:", response.status_code)
-    print("token response:", response.text)
-
     response.raise_for_status()
     return response.json()["access_token"]
 
@@ -74,6 +71,126 @@ def send_message(user_id, text):
     print("send response:", response.text)
 
 
+def send_button_menu(user_id, title, buttons):
+    access_token = get_access_token()
+
+    url = f"https://www.worksapis.com/v1.0/bots/{BOT_ID}/users/{user_id}/messages"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    actions = []
+
+    for button in buttons:
+        actions.append({
+            "type": "message",
+            "label": button,
+            "text": button
+        })
+
+    data = {
+        "content": {
+            "type": "button_template",
+            "contentText": title,
+            "actions": actions
+        }
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=data
+    )
+
+    print("menu status:", response.status_code)
+    print("menu response:", response.text)
+
+
+def send_main_menu(user_id):
+    send_button_menu(
+        user_id,
+        "お問い合わせ内容を選択してください。",
+        [
+            "勤怠",
+            "給与",
+            "備品発注",
+            "企業型確定拠出年金",
+            "各種届出",
+            "通勤関連",
+            "金銭関連",
+            "給与システム",
+            "korette",
+            "店舗設備"
+        ]
+    )
+
+
+def send_salary_menu(user_id):
+    send_button_menu(
+        user_id,
+        "給与に関する内容を選択してください。",
+        [
+            "通勤費・交通費",
+            "各種手当",
+            "賞与"
+        ]
+    )
+
+
+def send_supplies_menu(user_id):
+    send_button_menu(
+        user_id,
+        "備品発注に関する内容を選択してください。",
+        [
+            "たのめーる",
+            "収入印紙"
+        ]
+    )
+
+
+def send_notification_menu(user_id):
+    send_button_menu(
+        user_id,
+        "各種届出に関する内容を選択してください。",
+        [
+            "住所変更",
+            "家族異動",
+            "扶養加入・削除",
+            "休職・産休・育児休業",
+            "退職"
+        ]
+    )
+
+
+def send_commute_menu(user_id):
+    send_button_menu(
+        user_id,
+        "通勤関連の内容を選択してください。",
+        [
+            "マイカー通勤申請",
+            "通勤経路",
+            "通勤費・交通費"
+        ]
+    )
+
+
+def send_money_menu(user_id):
+    send_button_menu(
+        user_id,
+        "金銭関連の内容を選択してください。",
+        [
+            "レジ清算・返品処理",
+            "支払準備金",
+            "クレジット関連",
+            "月末残高報告書",
+            "入金",
+            "PayPay関連"
+        ]
+    )
+
+
 @app.route("/")
 def home():
     return "LINE WORKS Bot is running"
@@ -92,22 +209,133 @@ def callback():
         user_id = data["source"]["userId"]
         message = data["content"]["text"]
 
-        if message == "テスト":
-            reply = "受信しました！Botは正常に動いています。"
+        # 最初のメニュー
+        if message in ["メニュー", "問い合わせ", "開始"]:
+            send_main_menu(user_id)
 
-        elif "有給" in message:
-            reply = "有給休暇についてのご質問ですね。"
+        # 1階層目
+        elif message == "勤怠":
+            send_message(
+                user_id,
+                "「勤怠」に関するお問い合わせは、総務部までお願いいたします。"
+            )
 
-        elif "健康診断" in message:
-            reply = "健康診断についてのご質問ですね。"
+        elif message == "給与":
+            send_salary_menu(user_id)
 
-        elif "住所変更" in message:
-            reply = "住所変更についてのご質問ですね。"
+        elif message == "備品発注":
+            send_supplies_menu(user_id)
+
+        elif message == "企業型確定拠出年金":
+            send_message(
+                user_id,
+                "「企業型確定拠出年金」に関するお問い合わせは、総務部までお願いいたします。"
+            )
+
+        elif message == "各種届出":
+            send_notification_menu(user_id)
+
+        elif message == "通勤関連":
+            send_commute_menu(user_id)
+
+        elif message == "金銭関連":
+            send_money_menu(user_id)
+
+        elif message == "給与システム":
+            send_message(
+                user_id,
+                "「給与システム」に関するお問い合わせは、総務部までお願いいたします。"
+            )
+
+        elif message == "korette":
+            send_message(
+                user_id,
+                "「korette」に関するお問い合わせは、営業戦略部までお願いいたします。"
+            )
+
+        elif message == "店舗設備":
+            send_message(
+                user_id,
+                "「店舗設備」に関するお問い合わせは、営業戦略部までお願いいたします。"
+            )
+
+        # 給与
+        elif message == "通勤費・交通費":
+            send_message(
+                user_id,
+                "「通勤費・交通費」に関するお問い合わせは、経理課までお願いいたします。"
+            )
+
+        elif message == "各種手当":
+            send_message(
+                user_id,
+                "「各種手当」に関するお問い合わせは、各エリア長までお願いいたします。"
+            )
+
+        elif message == "賞与":
+            send_message(
+                user_id,
+                "「賞与」に関するお問い合わせは、各エリア長までお願いいたします。"
+            )
+
+        # 備品発注
+        elif message == "たのめーる":
+            send_message(
+                user_id,
+                "「たのめーる」に関するお問い合わせは、総務部までお願いいたします。"
+            )
+
+        elif message == "収入印紙":
+            send_message(
+                user_id,
+                "「収入印紙」に関するお問い合わせは、総務部までお願いいたします。"
+            )
+
+        # 各種届出
+        elif message in [
+            "住所変更",
+            "家族異動",
+            "扶養加入・削除",
+            "休職・産休・育児休業",
+            "退職"
+        ]:
+            send_message(
+                user_id,
+                f"「{message}」に関するお問い合わせは、総務部までお願いいたします。"
+            )
+
+        # 通勤関連
+        elif message == "マイカー通勤申請":
+            send_message(
+                user_id,
+                "「マイカー通勤申請（開始・取りやめ）」に関するお問い合わせは、総務部までお願いいたします。"
+            )
+
+        elif message == "通勤経路":
+            send_message(
+                user_id,
+                "「通勤経路」に関するお問い合わせは、経理課までお願いいたします。"
+            )
+
+        # 金銭関連
+        elif message in [
+            "レジ清算・返品処理",
+            "支払準備金",
+            "クレジット関連",
+            "月末残高報告書",
+            "入金",
+            "PayPay関連"
+        ]:
+            send_message(
+                user_id,
+                f"「{message}」に関するお問い合わせは、経理課までお願いいたします。"
+            )
 
         else:
-            reply = "申し訳ありません。該当する回答がありません。総務部へお問い合わせください。"
-
-        send_message(user_id, reply)
+            send_message(
+                user_id,
+                "「メニュー」と入力すると、お問い合わせ項目を選択できます。"
+            )
 
     return "", 200
 
